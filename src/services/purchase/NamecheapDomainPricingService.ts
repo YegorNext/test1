@@ -32,7 +32,11 @@ export class NameCheapDomainPricingService {
         return this.fail(domain, xml, apiError);
       }
 
-      const pricing = NamecheapPricingMapper.fromXml(parsed);
+      // ✅ ВАЖНО: берём правильный уровень вложенности
+      const root =
+        parsed?.ApiResponse?.CommandResponse?.UserGetPricingResult;
+
+      const pricing = NamecheapPricingMapper.fromXml(root);
 
       if (!pricing) {
         return this.fail(domain, xml, 'Failed to map pricing structure');
@@ -55,9 +59,9 @@ export class NameCheapDomainPricingService {
   }
 
   private extractApiError(parsed: any): string | null {
-    const status = parsed?.ApiResponse?.$?.Status;
-
     if (!parsed) return 'Invalid or empty API response';
+
+    const status = parsed?.ApiResponse?.$?.Status;
 
     if (status !== 'OK') {
       const errorNode = parsed?.ApiResponse?.Errors?.Error;
