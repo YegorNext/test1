@@ -1,41 +1,60 @@
-import { NamecheapContactDto } from "../../dto/NamecheapContactDto";
-import { NamecheapContactsDto } from "../../dto/NamecheapContactsDto";
+import { NamecheapContactsDto } from '../../dto/NamecheapContactsDto';
+import { NamecheapContactDto } from '../../dto/NamecheapContactDto';
 
 export class NamecheapContactsMapper {
-  static fromJson(json: unknown): NamecheapContactsDto {
-    if (!json || typeof json !== "object") {
-      throw new Error("Invalid Namecheap contacts json");
-    }
-
-    const data = json as Record<string, any>;
+  static fromJson(input: any): NamecheapContactsDto {
+    const source = input?.contacts ?? input;
 
     return new NamecheapContactsDto({
-      registrant: this.mapContact(data.registrant),
-      tech: this.mapContact(data.tech),
-      admin: this.mapContact(data.admin),
-      auxBilling: this.mapContact(data.auxBilling),
+      registrant: new NamecheapContactDto(
+        this.normalize(source?.registrant)
+      ),
+      tech: new NamecheapContactDto(
+        this.normalize(source?.tech)
+      ),
+      admin: new NamecheapContactDto(
+        this.normalize(source?.admin)
+      ),
+      auxBilling: new NamecheapContactDto(
+        this.normalize(source?.auxBilling)
+      ),
     });
   }
 
-  private static mapContact(data: any): NamecheapContactDto {
-    if (!data) {
-      throw new Error("Invalid contact object");
-    }
+  private static normalize(c: any) {
+    if (!c) return {};
 
-    return new NamecheapContactDto({
-      firstName: data.firstName,
-      lastName: data.lastName,
+    return {
+      firstName: c.firstName,
+      lastName: c.lastName,
+      address1: c.address1,
+      address2: c.address2,
+      city: c.city,
+      stateProvince: c.stateProvince,
+      postalCode: c.postalCode,
 
-      address1: data.address1,
-      address2: data.address2,
+      country: this.normalizeCountry(c.country),
 
-      city: data.city,
-      stateProvince: data.stateProvince,
-      postalCode: data.postalCode,
-      country: data.country,
+      phone: this.normalizePhone(c.phone),
 
-      phone: data.phone,
-      email: data.email,
-    });
+      email: c.email,
+    };
+  }
+
+  private static normalizeCountry(country: string) {
+    if (!country) return '';
+
+    const map: Record<string, string> = {
+      Ukraine: 'UA',
+      'United States': 'US',
+      Germany: 'DE',
+    };
+
+    return map[country] ?? country;
+  }
+
+  private static normalizePhone(phone: string) {
+    if (!phone) return '';
+    return phone.replace(/\./g, '');
   }
 }
