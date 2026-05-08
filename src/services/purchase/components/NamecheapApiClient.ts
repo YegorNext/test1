@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 
-export class NameCheapApiClient {
+export class NamecheapApiClient {
   private readonly client: AxiosInstance;
 
   constructor(baseUrl: string) {

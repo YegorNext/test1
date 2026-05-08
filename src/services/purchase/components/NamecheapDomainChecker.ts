@@ -1,27 +1,36 @@
 import { parseStringPromise } from 'xml2js';
+import { NamecheapHttpClient } from '../dns/NamecheapHttpClient';
 
-export class NameCheapDomainChecker {
+export class NamecheapDomainChecker {
   constructor(
-    private readonly account: any 
+    private readonly account: any,
+    private readonly httpClient: NamecheapHttpClient
   ) {}
 
   public async checkAvailability(domain: string): Promise<boolean> {
     try {
-      const url = this.buildCheckUrl(domain);
+      const params = this.buildParams(domain);
 
-      const response = await fetch(url).then(r => r.text());
+      const xml = await this.httpClient.get(params);
 
-      return this.parseDomainAvailability(response);
+      return this.parseDomainAvailability(xml);
     } catch (error: any) {
-      console.error(`Error checking domain ${domain}: ${error.message}`);
+      console.error(`[CHECK] Error for ${domain}: ${error.message}`);
       return false;
     }
   }
 
-  private buildCheckUrl(domain: string): string {
-    const { apiUser, apiKey, username, clientIp, apiUrl } = this.account;
+  private buildParams(domain: string): Record<string, string> {
+    const { apiUser, apiKey, username, clientIp } = this.account;
 
-    return `${apiUrl}?ApiUser=${apiUser}&ApiKey=${apiKey}&UserName=${username}&ClientIp=${clientIp}&Command=namecheap.domains.check&DomainList=${domain}`;
+    return {
+      ApiUser: apiUser,
+      ApiKey: apiKey,
+      UserName: username,
+      ClientIp: clientIp,
+      Command: 'namecheap.domains.check',
+      DomainList: domain,
+    };
   }
 
   private async parseDomainAvailability(xml: string): Promise<boolean> {
@@ -32,10 +41,7 @@ export class NameCheapDomainChecker {
     const domainCheckResult =
       result?.ApiResponse?.CommandResponse?.DomainCheckResult?.$;
 
-    if (!domainCheckResult || typeof domainCheckResult.Available === 'undefined') {
-      console.error('Unexpected response from NameCheap API');
-      return false;
-    }
+    if (!domainCheckResult) return false;
 
     return domainCheckResult.Available === 'true';
   }

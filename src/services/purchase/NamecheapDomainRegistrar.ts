@@ -1,33 +1,45 @@
 import { IDomainRegistrar } from './IDomainRegistrar';
 import { DomainPurchaseUrlBuilder } from './components/DomainPurchaseUrlBuilder';
 import { DomainResponseParser } from './components/DomainResponseParser';
-import { NamecheapApiClient } from './components/NamecheapApiClient';
+import { NamecheapHttpClient } from './dns/NamecheapHttpClient';
 import { NamecheapDomainChecker } from './components/NamecheapDomainChecker';
 
 export class NamecheapDomainRegistrar implements IDomainRegistrar {
   private checker: NamecheapDomainChecker;
   private parser: DomainResponseParser;
-  private apiClient: NamecheapApiClient;
 
-  constructor(private readonly account: any ) {
-    this.checker = new NamecheapDomainChecker(account);
-
+  constructor(
+    private readonly account: any,
+    private readonly httpClient: NamecheapHttpClient
+  ) {
+    this.checker = new NamecheapDomainChecker(account, httpClient);
     this.parser = new DomainResponseParser();
-
-    this.apiClient = new NamecheapApiClient(account.apiUrl);
   }
 
   public async checkAvailability(domain: string): Promise<boolean> {
-    return await this.checker.checkAvailability(domain);
+    return this.checker.checkAvailability(domain);
   }
 
   public async registerDomain(domain: string): Promise<boolean> {
+    console.log('[REGISTER] START:', domain);
+
     await this.ensureAvailable(domain);
 
-    const url = this.buildPurchaseUrl(domain);
-    const xml = await this.apiClient.execute(url);
+    console.log('[REGISTER] AVAILABLE OK');
 
-    return this.parser.parseRegistered(xml);
+    const params = new DomainPurchaseUrlBuilder(this.account, domain).build();
+
+    console.log('[REGISTER] PARAMS READY');
+
+    const xml = await this.httpClient.get(params);
+
+    console.log('[REGISTER] RESPONSE RECEIVED');
+
+    const result = await this.parser.parseRegistered(xml);
+
+    console.log('[REGISTER] RESULT:', result);
+
+    return result;
   }
 
   private async ensureAvailable(domain: string): Promise<void> {
@@ -36,10 +48,5 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
     if (!available) {
       throw new Error(`Domain ${domain} is not available for registration.`);
     }
-  }
-
-  private buildPurchaseUrl(domain: string): string {
-    const builder = new DomainPurchaseUrlBuilder(this.account, domain);
-    return builder.build();
   }
 }
