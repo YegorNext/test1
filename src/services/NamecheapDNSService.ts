@@ -55,7 +55,6 @@ export class NamecheapDNSService {
     };
   }
 
-  // 👉 единый парсер вместо xmlParser класса
   private async parseXml(xml: string) {
     const { parseStringPromise } = await import('xml2js');
 

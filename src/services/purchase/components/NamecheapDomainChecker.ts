@@ -34,12 +34,18 @@ export class NamecheapDomainChecker {
   }
 
   private async parseDomainAvailability(xml: string): Promise<boolean> {
+    console.log('[CHECK RAW XML]:', xml);
+
     const result = await parseStringPromise(xml, {
       explicitArray: false,
     });
 
+    console.log('[CHECK PARSED]:', JSON.stringify(result, null, 2));
+
     const domainCheckResult =
       result?.ApiResponse?.CommandResponse?.DomainCheckResult?.$;
+
+    console.log('[CHECK ATTRIBUTES]:', domainCheckResult);
 
     if (!domainCheckResult) return false;
 
