@@ -51,6 +51,8 @@ export class DomainController {
   purchaseDomain = async (req: Request, res: Response) => {
     const { domain, accountId } = req.body;
 
+    console.log("TEST");
+
     if (!domain || !accountId) {
       return res.status(400).json({
         message: 'Domain and accountId are required.',
