@@ -63,6 +63,9 @@ export class NamecheapServiceFactory {
 async createRegistrar(accountId: string) {
   const account = await this.getAccount(accountId);
 
+  console.log('[ACCOUNT RAW]:', account);
+  console.log('[ACCOUNT CONTACTS TYPE]:', typeof account.contacts);
+
   const http = new NamecheapHttpClient(this.apiUrl);
 
   return new NamecheapDomainRegistrar(
