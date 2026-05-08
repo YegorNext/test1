@@ -1,12 +1,10 @@
 import { NamecheapHttpClient } from './purchase/dns/NamecheapHttpClient';
 import { NamecheapRequestBuilder } from './purchase/dns/NamecheapRequestBuilder';
-import { NamecheapXmlParser } from '../services/purchase/components/NamecheapXmlParser';
 import { NamecheapDnsParser } from './purchase/dns/NamecheapDnsParser';
 
 export class NamecheapDNSService {
   constructor(
     private readonly http: NamecheapHttpClient,
-    private readonly xmlParser: NamecheapXmlParser,
     private readonly dnsParser: NamecheapDnsParser,
     private readonly account: {
       apiUser: string;
@@ -26,7 +24,8 @@ export class NamecheapDNSService {
     );
 
     const xml = await this.http.get(params);
-    const parsed = await this.xmlParser.parse(xml);
+
+    const parsed = await this.parseXml(xml);
 
     const isSuccess = this.dnsParser.parseSetARecord(parsed);
 
@@ -45,7 +44,8 @@ export class NamecheapDNSService {
     );
 
     const xml = await this.http.get(params);
-    const parsed = await this.xmlParser.parse(xml);
+
+    const parsed = await this.parseXml(xml);
 
     const isSuccess = this.dnsParser.parseSetCustomNameservers(parsed);
 
@@ -53,5 +53,14 @@ export class NamecheapDNSService {
       isSuccess,
       rawXml: xml,
     };
+  }
+
+  // 👉 единый парсер вместо xmlParser класса
+  private async parseXml(xml: string) {
+    const { parseStringPromise } = await import('xml2js');
+
+    return parseStringPromise(xml, {
+      explicitArray: false,
+    });
   }
 }
