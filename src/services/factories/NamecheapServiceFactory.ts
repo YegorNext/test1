@@ -23,6 +23,14 @@ export class NamecheapServiceFactory {
       throw new Error('Namecheap account not found');
     }
 
+    console.log('[ACCOUNT RAW]:', account);
+
+    if (account.contacts?.contacts) {
+      account.contacts = account.contacts.contacts;
+    }
+
+    console.log('[ACCOUNT CONTACTS FIXED]:', account.contacts);
+
     return account;
   }
 
