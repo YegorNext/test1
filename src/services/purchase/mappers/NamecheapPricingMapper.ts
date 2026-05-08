@@ -1,46 +1,59 @@
 export class NamecheapPricingMapper {
   static fromXml(parsed: any) {
-    try {
-      const result =
-        parsed?.ApiResponse?.CommandResponse?.UserGetPricingResult;
+    const categories =
+      parsed?.ApiResponse
+        ?.CommandResponse
+        ?.UserGetPricingResult
+        ?.ProductType
+        ?.ProductCategory;
 
-      const productTypes = this.toArray(result?.ProductType);
-
-      const pricing: any = {};
-
-      for (const type of productTypes) {
-        const categories = this.toArray(type?.ProductCategory);
-
-        for (const category of categories) {
-          const products = this.toArray(category?.Product);
-
-          for (const product of products) {
-            const prices = this.toArray(product?.Price);
-
-            pricing[product?.Name] ??= [];
-
-            for (const price of prices) {
-              pricing[product.Name].push({
-                duration: Number(price.Duration),
-                currency: price.Currency,
-                price: Number(price.Price),
-                type: price.PricingType,
-                yourPrice: Number(price.YourPrice),
-              });
-            }
-          }
-        }
-      }
-
-      return Object.keys(pricing).length ? pricing : null;
-    } catch (e) {
-      console.log('[NAMECHEAP][MAPPER ERROR]', e);
+    if (!categories) {
       return null;
     }
-  }
 
-  private static toArray<T>(value: T | T[] | undefined): T[] {
-    if (!value) return [];
-    return Array.isArray(value) ? value : [value];
+    const categoryList = Array.isArray(categories)
+      ? categories
+      : [categories];
+
+    const result: Record<string, any> = {};
+
+    for (const category of categoryList) {
+      const categoryName = category?.$?.Name;
+
+      const product = category?.Product;
+
+      if (!product) {
+        continue;
+      }
+
+      const prices = product?.Price;
+
+      if (!prices) {
+        continue;
+      }
+
+      const priceList = Array.isArray(prices)
+        ? prices
+        : [prices];
+
+      const yearly = priceList.find(
+        (p: any) =>
+          p?.$?.Duration === '1' &&
+          p?.$?.DurationType === 'YEAR'
+      );
+
+      if (!yearly) {
+        continue;
+      }
+
+      result[categoryName] = {
+        price: yearly.$?.Price ?? null,
+        yourPrice: yearly.$?.YourPrice ?? null,
+        additionalCost: yearly.$?.AdditionalCost ?? null,
+        currency: yearly.$?.Currency ?? null,
+      };
+    }
+
+    return result;
   }
 }
