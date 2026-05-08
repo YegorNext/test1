@@ -16,42 +16,45 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
   }
 
   public async checkAvailability(domain: string): Promise<boolean> {
-    console.log('[CHECK] domain:', domain);
+    console.log('\n[CHECK FLOW START]');
+    console.log('[CHECK DOMAIN]:', domain);
 
     const result = await this.checker.checkAvailability(domain);
 
-    console.log('[CHECK RESULT]:', result);
+    console.log('[CHECK FINAL RESULT]:', result);
+    console.log('[CHECK FLOW END]\n');
 
     return result;
   }
 
   public async registerDomain(domain: string): Promise<boolean> {
     console.log('\n==============================');
-    console.log('[REGISTER] START:', domain);
+    console.log('[REGISTER FLOW START]', domain);
     console.log('==============================');
 
     await this.ensureAvailable(domain);
 
-    console.log('[REGISTER] AVAILABLE OK');
+    console.log('[REGISTER] availability confirmed');
 
     const params = this.buildParams(domain);
 
-    console.log('[REGISTER] CONTACTS RAW:');
-    console.log(JSON.stringify(this.account.contacts, null, 2));
-
-    console.log('[REGISTER] PARAMS BUILT:');
+    console.log('[REGISTER REQUEST PARAMS]:');
     console.log(JSON.stringify(params, null, 2));
 
-    console.log('[REGISTER] SENDING REQUEST...');
+    console.log('[REGISTER] sending request...');
 
     const xml = await this.httpClient.get(params);
 
-    console.log('[REGISTER] RAW XML RESPONSE:');
+    console.log('[REGISTER RAW XML RESPONSE]:');
     console.log(xml);
 
     const result = await this.parser.parseRegistered(xml);
 
-    console.log('[REGISTER] PARSED RESULT:', result);
+    console.log('[REGISTER PARSED RESULT]:', result);
+
+    console.log('==============================');
+    console.log('[REGISTER FLOW END]');
+    console.log('==============================\n');
 
     return result;
   }
@@ -59,14 +62,14 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
   private buildParams(domain: string) {
     const contacts = this.account.contacts?.registrant;
 
-    console.log('[REGISTER] USING CONTACTS:');
-    console.log(JSON.stringify(contacts, null, 2));
+    console.log('[REGISTER CONTACT SOURCE]:');
+    console.log(JSON.stringify(this.account.contacts, null, 2));
 
     if (!contacts) {
       throw new Error('Contacts are missing in account');
     }
 
-    const params = {
+    return {
       ApiUser: this.account.apiUser,
       ApiKey: this.account.apiKey,
       UserName: this.account.username,
@@ -80,7 +83,6 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
       AddFreeWhoisguard: 'no',
       WGEnabled: 'no',
 
-      // REGISTRANT
       RegistrantFirstName: contacts.firstName,
       RegistrantLastName: contacts.lastName,
       RegistrantAddress1: contacts.address1,
@@ -91,7 +93,6 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
       RegistrantPhone: contacts.phone,
       RegistrantEmailAddress: contacts.email,
 
-      // TECH
       TechFirstName: contacts.firstName,
       TechLastName: contacts.lastName,
       TechAddress1: contacts.address1,
@@ -102,7 +103,6 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
       TechPhone: contacts.phone,
       TechEmailAddress: contacts.email,
 
-      // ADMIN
       AdminFirstName: contacts.firstName,
       AdminLastName: contacts.lastName,
       AdminAddress1: contacts.address1,
@@ -113,7 +113,6 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
       AdminPhone: contacts.phone,
       AdminEmailAddress: contacts.email,
 
-      // BILLING
       AuxBillingFirstName: contacts.firstName,
       AuxBillingLastName: contacts.lastName,
       AuxBillingAddress1: contacts.address1,
@@ -124,10 +123,6 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
       AuxBillingPhone: contacts.phone,
       AuxBillingEmailAddress: contacts.email,
     };
-
-    console.log('[REGISTER] FINAL PARAM OBJECT READY');
-
-    return params;
   }
 
   private async ensureAvailable(domain: string): Promise<void> {
@@ -135,10 +130,10 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
 
     const available = await this.checkAvailability(domain);
 
-    console.log('[REGISTER] AVAILABLE:', available);
+    console.log('[REGISTER] AVAILABLE RESULT:', available);
 
     if (!available) {
-      throw new Error(`Domain ${domain} is not available for registration.`);
+      throw new Error(`Domain ${domain} is not available for registration`);
     }
   }
 }

@@ -8,47 +8,79 @@ export class NamecheapDomainChecker {
   ) {}
 
   public async checkAvailability(domain: string): Promise<boolean> {
-    try {
-      const params = this.buildParams(domain);
+    console.log('\n[CHECK START]');
+    console.log('[DOMAIN]:', domain);
 
-      const xml = await this.httpClient.get(params);
+    const params = this.buildParams(domain);
 
-      return this.parseDomainAvailability(xml);
-    } catch (error: any) {
-      console.error(`[CHECK] Error for ${domain}: ${error.message}`);
-      return false;
-    }
-  }
+    console.log('[CHECK REQUEST PARAMS]:');
+    console.log(JSON.stringify(params, null, 2));
 
-  private buildParams(domain: string): Record<string, string> {
-    const { apiUser, apiKey, username, clientIp } = this.account;
+    const xml = await this.httpClient.get(params);
 
-    return {
-      ApiUser: apiUser,
-      ApiKey: apiKey,
-      UserName: username,
-      ClientIp: clientIp,
-      Command: 'namecheap.domains.check',
-      DomainList: domain,
-    };
-  }
+    console.log('[CHECK RAW XML]:');
+    console.log(xml);
 
-  private async parseDomainAvailability(xml: string): Promise<boolean> {
-    console.log('[CHECK RAW XML]:', xml);
-
-    const result = await parseStringPromise(xml, {
+    const parsed = await parseStringPromise(xml, {
       explicitArray: false,
     });
 
-    console.log('[CHECK PARSED]:', JSON.stringify(result, null, 2));
+    console.log('[CHECK PARSED FULL]:');
+    console.log(JSON.stringify(parsed, null, 2));
 
-    const domainCheckResult =
-      result?.ApiResponse?.CommandResponse?.DomainCheckResult?.$;
+    const result =
+      parsed?.ApiResponse?.CommandResponse?.DomainCheckResult?.$;
 
-    console.log('[CHECK ATTRIBUTES]:', domainCheckResult);
+    console.log('[CHECK ATTRIBUTES]:', result);
 
-    if (!domainCheckResult) return false;
+    if (!result) {
+      console.log('[CHECK ERROR]: missing DomainCheckResult');
+      return false;
+    }
 
-    return domainCheckResult.Available === 'true';
+    const normalized = {
+      domain: result.Domain,
+      available: result.Available,
+      errorNo: result.ErrorNo,
+      description: result.Description,
+      isPremium: result.IsPremiumName,
+    };
+
+    console.log('[CHECK NORMALIZED]:', normalized);
+
+    const interpretation = this.interpret(result);
+
+    console.log('[CHECK INTERPRETATION]:', interpretation);
+
+    return result.Available === 'true';
+  }
+
+  private interpret(result: any) {
+    if (result.Available === 'true') {
+      return {
+        status: 'AVAILABLE',
+        reason: null,
+      };
+    }
+
+    return {
+      status: 'NOT_AVAILABLE',
+      reason:
+        result.Description ||
+        (result.ErrorNo === '0'
+          ? 'Likely already registered or restricted by registry'
+          : 'Namecheap returned explicit restriction'),
+    };
+  }
+
+  private buildParams(domain: string) {
+    return {
+      ApiUser: this.account.apiUser,
+      ApiKey: this.account.apiKey,
+      UserName: this.account.username,
+      ClientIp: this.account.clientIp,
+      Command: 'namecheap.domains.check',
+      DomainList: domain,
+    };
   }
 }
