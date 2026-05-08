@@ -11,9 +11,14 @@ export class NamecheapApiClient {
   }
 
   public async execute(url: string): Promise<string> {
+    console.log('[HTTP REQUEST URL]:', url);
+
     const response = await this.client.get('', {
       params: new URL(url).searchParams,
     });
+
+    console.log('[HTTP STATUS]:', response.status);
+    console.log('[HTTP DATA RAW]:', response.data);
 
     return response.data;
   }
