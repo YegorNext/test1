@@ -1,0 +1,32 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UserEntity = exports.UserTeamEntity = void 0;
+class UserTeamEntity {
+    name;
+    alias;
+    constructor(partial) {
+        Object.assign(this, partial);
+    }
+}
+exports.UserTeamEntity = UserTeamEntity;
+class UserEntity {
+    id;
+    name;
+    password;
+    role;
+    teamId;
+    team;
+    servers;
+    archives;
+    campaigns;
+    token;
+    tokenExpiry;
+    tokenVersion;
+    createdAt;
+    updatedAt;
+    constructor(partial) {
+        Object.assign(this, partial);
+    }
+}
+exports.UserEntity = UserEntity;
+//# sourceMappingURL=user.entity.js.map
