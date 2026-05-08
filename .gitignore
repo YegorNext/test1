@@ -1,0 +1,10 @@
+# Dirs
+node_modules
+dist
+
+# Env vars
+.env
+.env.namecheap
+
+*.toml
+.idea
