@@ -5,10 +5,14 @@ export class NamecheapPricingResponseParser {
     try {
       const parsed = await parseStringPromise(xml, {
         explicitArray: false,
+        ignoreAttrs: false,
+        trim: true,
+        mergeAttrs: true,
       });
 
       return parsed ?? null;
-    } catch {
+    } catch (e) {
+      console.log('[NAMECHEAP][PRICING] PARSE ERROR:', e);
       return null;
     }
   }
