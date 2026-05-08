@@ -2,10 +2,12 @@ import { NamecheapAccountService } from '../NamecheapAccountService';
 
 import { NamecheapHttpClient } from '../purchase/dns/NamecheapHttpClient';
 import { NamecheapDnsParser } from '../purchase/dns/NamecheapDnsParser';
-import { NameCheapDomainPricingService } from '../purchase/NamecheapDomainPricingService';
-import { NamecheapDomainRegistrar } from '../purchase/NamecheapDomainRegistrar';
 import { NamecheapDNSService } from '../NamecheapDNSService';
+
+import { NameCheapDomainPricingService } from '../purchase/NamecheapDomainPricingService';
 import { NamecheapPricingResponseParser } from '../purchase/pricing/NamecheapPricingResponseParser';
+
+import { NamecheapDomainRegistrar } from '../purchase/NamecheapDomainRegistrar';
 
 export class NamecheapServiceFactory {
   constructor(
@@ -37,7 +39,7 @@ export class NamecheapServiceFactory {
         apiUser: account.apiUser,
         apiKey: account.apiKey,
         username: account.username,
-        clientIp: this.clientIp,
+        clientIp: this.clientIp
       }
     );
   }
@@ -63,6 +65,15 @@ export class NamecheapServiceFactory {
 
     const http = new NamecheapHttpClient(this.apiUrl);
 
-    return new NamecheapDomainRegistrar(account, http);
+    return new NamecheapDomainRegistrar(
+      {
+        apiUser: account.apiUser,
+        apiKey: account.apiKey,
+        username: account.username,
+        apiUrl: this.apiUrl,
+        clientIp: this.clientIp
+      },
+      http
+    );
   }
 }

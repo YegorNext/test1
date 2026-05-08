@@ -27,11 +27,13 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
 
     console.log('[REGISTER] AVAILABLE OK');
 
-    const params = new DomainPurchaseUrlBuilder(this.account, domain).build();
+    const url = new DomainPurchaseUrlBuilder(this.account, domain).build();
 
-    console.log('[REGISTER] PARAMS READY');
+    console.log('[REGISTER] URL:', url);
 
-    const xml = await this.httpClient.get(params);
+    const xml = await this.httpClient.get(
+      Object.fromEntries(new URL(url).searchParams)
+    );
 
     console.log('[REGISTER] RESPONSE RECEIVED');
 
