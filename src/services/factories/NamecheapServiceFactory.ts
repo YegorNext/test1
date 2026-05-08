@@ -60,20 +60,22 @@ export class NamecheapServiceFactory {
     );
   }
 
-  async createRegistrar(accountId: string) {
-    const account = await this.getAccount(accountId);
+async createRegistrar(accountId: string) {
+  const account = await this.getAccount(accountId);
 
-    const http = new NamecheapHttpClient(this.apiUrl);
+  const http = new NamecheapHttpClient(this.apiUrl);
 
-    return new NamecheapDomainRegistrar(
-      {
-        apiUser: account.apiUser,
-        apiKey: account.apiKey,
-        username: account.username,
-        apiUrl: this.apiUrl,
-        clientIp: this.clientIp
-      },
-      http
-    );
-  }
+  return new NamecheapDomainRegistrar(
+    {
+      apiUser: account.apiUser,
+      apiKey: account.apiKey,
+      username: account.username,
+      apiUrl: this.apiUrl,
+      clientIp: this.clientIp,
+
+      contacts: account.contacts
+    },
+    http
+  );
+}
 }
