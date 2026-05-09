@@ -13,10 +13,6 @@ export class CloudflareController {
       });
     }
     
-    console.log(`Provisioning domain ${domain} with IP ${ip} using Cloudflare account ${cloudflareAccountId} and Namecheap account ${namecheapAccountId}`); 
-
-    return;
-
     try {
       const service =
         await this.provisioningFactory.createCloudflareProvisionService(
