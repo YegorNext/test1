@@ -1,32 +1,20 @@
 import { parseStringPromise } from 'xml2js';
+import { NamecheapXmlExtractor } from '../../../utils/namecheap/xml.extractor';
 
 export class DomainResponseParser {
   public async parseRegistered(xml: string): Promise<boolean> {
-    console.log('[REGISTER RAW XML LENGTH]:', xml?.length);
+    const document = await this.parseXml(xml);
 
-    try {
-      const result = await parseStringPromise(xml);
+    const domainResult = NamecheapXmlExtractor.getCreateDomainResult(document);
 
-      console.log('[REGISTER PARSED FULL]:');
-      console.log(JSON.stringify(result, null, 2));
+    return this.isRegistered(domainResult);
+  }
 
-      const commandResponse =
-        result?.ApiResponse?.CommandResponse?.[0];
+  private async parseXml(xml: string): Promise<any> {
+    return parseStringPromise(xml);
+  }
 
-      const domainResult =
-        commandResponse?.DomainCreateResult?.[0]?.$;
-
-      console.log('[REGISTER ATTRIBUTES]:', domainResult);
-
-      if (!domainResult) {
-        console.log('[REGISTER ERROR]: missing DomainCreateResult');
-        return false;
-      }
-
-      return domainResult.Registered === 'true';
-    } catch (e) {
-      console.error('[REGISTER PARSE ERROR]:', e);
-      return false;
-    }
+  private isRegistered(domainResult: any): boolean {
+    return domainResult?.Registered === 'true';
   }
 }

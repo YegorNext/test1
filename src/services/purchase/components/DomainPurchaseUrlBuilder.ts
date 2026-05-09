@@ -1,27 +1,40 @@
+import { NamecheapCommands } from '../../../utils/namecheap/constants/commands';
+import { NamecheapAccount } from '../../../types/NamecheapAccount';
+import { NamecheapBaseParams } from '../../../utils/namecheap/namecheap-base-params';
+
 export class DomainPurchaseUrlBuilder {
   constructor(
-    private readonly account: any,
+    private readonly account: NamecheapAccount,
     private readonly domain: string,
-    private readonly years = 1
+    private readonly years: number = 1
   ) {}
 
   public build(): string {
+    this.validate();
+
+    const params = this.buildParams();
+
+    return `${this.account.apiUrl}?${params.toString()}`;
+  }
+
+  private buildParams(): URLSearchParams {
+    return new URLSearchParams({
+      ...NamecheapBaseParams.build(this.account),
+      Command: NamecheapCommands.DOMAIN_CREATE,
+      DomainName: this.domain,
+      Years: String(this.years),
+      AddFreeWhoisguard: 'no',
+      WGEnabled: 'no',
+    });
+  }
+
+  private validate(): void {
     if (!this.account.clientIp) {
       throw new Error('ClientIp is missing in account');
     }
 
-    const params = new URLSearchParams({
-      ApiUser: this.account.apiUser,
-      ApiKey: this.account.apiKey,
-      UserName: this.account.username,
-      ClientIp: this.account.clientIp, 
-      Command: 'namecheap.domains.create',
-      DomainName: this.domain,
-      Years: this.years.toString(),
-      AddFreeWhoisguard: 'no',
-      WGEnabled: 'no',
-    });
-
-    return `${this.account.apiUrl}?${params.toString()}`;
+    if (!this.domain) {
+      throw new Error('Domain is required');
+    }
   }
 }

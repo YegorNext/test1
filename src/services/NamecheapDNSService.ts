@@ -15,13 +15,7 @@ export class NamecheapDNSService {
   ) {}
 
   async setARecord(domain: string, ip: string, host = '@', ttl = 1800) {
-    const params = NamecheapRequestBuilder.buildARecord(
-      this.account,
-      domain,
-      ip,
-      host,
-      ttl
-    );
+    const params = NamecheapRequestBuilder.buildARecord(this.account, domain, ip, host, ttl);
 
     const xml = await this.http.get(params);
 

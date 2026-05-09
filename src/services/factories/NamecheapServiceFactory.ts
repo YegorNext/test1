@@ -9,6 +9,9 @@ import { NamecheapPricingResponseParser } from '../purchase/pricing/NamecheapPri
 
 import { NamecheapDomainRegistrar } from '../purchase/NamecheapDomainRegistrar';
 
+import { NamecheapAccount } from '../../types/NamecheapAccount';
+import { NamecheapAccountMapper } from '../purchase/mappers/NamecheapAccountMapper';
+
 export class NamecheapServiceFactory {
   constructor(
     private readonly accountService: NamecheapAccountService,
@@ -16,77 +19,46 @@ export class NamecheapServiceFactory {
     private readonly clientIp: string
   ) {}
 
-  private async getAccount(accountId: string) {
-    const account = await this.accountService.findById(accountId);
+  private async getAccount(accountId: string): Promise<NamecheapAccount> {
+    const entity = await this.accountService.findById(accountId);
 
-    if (!account) {
+    if (!entity) {
       throw new Error('Namecheap account not found');
     }
 
-    console.log('[ACCOUNT RAW]:', account);
-
-    if (account.contacts?.contacts) {
-      account.contacts = account.contacts.contacts;
-    }
-
-    console.log('[ACCOUNT CONTACTS FIXED]:', account.contacts);
-
-    return account;
+    return NamecheapAccountMapper.toDomain(
+      entity,
+      this.apiUrl,
+      this.clientIp
+    );
   }
 
   async createDNSService(accountId: string) {
     const account = await this.getAccount(accountId);
 
-    const http = new NamecheapHttpClient(this.apiUrl);
-    const dnsParser = new NamecheapDnsParser();
-
     return new NamecheapDNSService(
-      http,
-      dnsParser,
-      {
-        apiUser: account.apiUser,
-        apiKey: account.apiKey,
-        username: account.username,
-        clientIp: this.clientIp
-      }
+      new NamecheapHttpClient(this.apiUrl),
+      new NamecheapDnsParser(),
+      account
     );
   }
 
   async createPricingService(accountId: string) {
     const account = await this.getAccount(accountId);
 
-    const http = new NamecheapHttpClient(this.apiUrl);
-    const pricingParser = new NamecheapPricingResponseParser();
-
     return new NameCheapDomainPricingService(
-      http,
-      pricingParser,
-      account.apiUser,
-      account.apiKey,
-      account.username,
-      this.clientIp
+      new NamecheapHttpClient(this.apiUrl),
+      new NamecheapPricingResponseParser(),
+      account
     );
   }
 
-async createRegistrar(accountId: string) {
-  const account = await this.getAccount(accountId);
+  async createRegistrar(accountId: string) {
+    const account = await this.getAccount(accountId);
 
-  console.log('[ACCOUNT RAW]:', account);
-  console.log('[ACCOUNT CONTACTS TYPE]:', typeof account.contacts);
-
-  const http = new NamecheapHttpClient(this.apiUrl);
-
-  return new NamecheapDomainRegistrar(
-    {
-      apiUser: account.apiUser,
-      apiKey: account.apiKey,
-      username: account.username,
-      apiUrl: this.apiUrl,
-      clientIp: this.clientIp,
-
-      contacts: account.contacts
-    },
-    http
-  );
-}
+    return new NamecheapDomainRegistrar(
+      account,
+      new NamecheapHttpClient(this.apiUrl)
+    );
+  }
 }

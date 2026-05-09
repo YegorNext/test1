@@ -3,23 +3,19 @@ import { NamecheapPricingRequestBuilder } from './pricing/NamecheapPricingReques
 import { NamecheapPricingResponseParser } from './pricing/NamecheapPricingResponseParser';
 import { NamecheapPricingMapper } from './mappers/NamecheapPricingMapper';
 
+import { NamecheapAccount } from '../../types/NamecheapAccount';
+
 export class NameCheapDomainPricingService {
   constructor(
     private readonly http: NamecheapHttpClient,
     private readonly parser: NamecheapPricingResponseParser,
-    private readonly apiUser: string,
-    private readonly apiKey: string,
-    private readonly userName: string,
-    private readonly clientIp: string
+    private readonly account: NamecheapAccount
   ) {}
 
   public async getPricing(domain: string) {
     try {
       const params = NamecheapPricingRequestBuilder.build(
-        this.apiUser,
-        this.apiKey,
-        this.userName,
-        this.clientIp,
+        this.account,
         domain
       );
 
@@ -27,21 +23,8 @@ export class NameCheapDomainPricingService {
 
       const parsed = await this.parser.parse(xml);
 
-      if (!parsed) {
-        return this.fail(domain, 'Invalid XML response', xml);
-      }
-
-      const status = parsed?.ApiResponse?.$?.Status;
-
-      if (status !== 'OK') {
-        const error = parsed?.ApiResponse?.Errors?.Error;
-
-        const message =
-          typeof error === 'string'
-            ? error
-            : error?._ || 'Unknown Namecheap API error';
-
-        return this.fail(domain, message, xml);
+      if (!this.isValidResponse(parsed)) {
+        return this.fail(domain, 'Invalid API response', xml);
       }
 
       const pricing = NamecheapPricingMapper.fromXml(parsed);
@@ -59,6 +42,10 @@ export class NameCheapDomainPricingService {
     } catch (e: any) {
       return this.fail(domain, e.message || 'UNKNOWN_ERROR', '');
     }
+  }
+
+  private isValidResponse(parsed: any): boolean {
+    return parsed?.ApiResponse?.$?.Status === 'OK';
   }
 
   private fail(domain: string, message: string, xml: string) {

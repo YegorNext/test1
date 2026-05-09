@@ -32,25 +32,10 @@ export class NamecheapContactsMapper {
       city: c.city,
       stateProvince: c.stateProvince,
       postalCode: c.postalCode,
-
-      country: this.normalizeCountry(c.country),
-
+      country: c.country,
       phone: this.normalizePhone(c.phone),
-
       email: c.email,
     };
-  }
-
-  private static normalizeCountry(country: string) {
-    if (!country) return '';
-
-    const map: Record<string, string> = {
-      Ukraine: 'UA',
-      'United States': 'US',
-      Germany: 'DE',
-    };
-
-    return map[country] ?? country;
   }
 
   private static normalizePhone(phone: string) {

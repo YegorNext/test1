@@ -1,5 +1,20 @@
 import { parseStringPromise } from 'xml2js';
 import { NamecheapHttpClient } from '../dns/NamecheapHttpClient';
+import { NamecheapCommands } from '../../../utils/namecheap/constants/commands';
+
+import { NamecheapBaseParams } from '../../../utils/namecheap/namecheap-base-params';
+import { mergeParams } from '../../../utils/namecheap/merge-params';
+import { NamecheapXmlExtractor } from '../../../utils/namecheap/xml.extractor';
+
+import {
+  DOMAIN_STATUS,
+  DOMAIN_REASONS,
+} from '../../../utils/namecheap/constants/domain.constants';
+
+import {
+  DomainCheckResult,
+  DomainAvailabilityResult,
+} from '../../../utils/namecheap/types/domain.types';
 
 export class NamecheapDomainChecker {
   constructor(
@@ -7,80 +22,70 @@ export class NamecheapDomainChecker {
     private readonly httpClient: NamecheapHttpClient
   ) {}
 
-  public async checkAvailability(domain: string): Promise<boolean> {
-    console.log('\n[CHECK START]');
-    console.log('[DOMAIN]:', domain);
-
+  public async checkAvailability(domain: string): Promise<DomainAvailabilityResult> {
     const params = this.buildParams(domain);
 
-    console.log('[CHECK REQUEST PARAMS]:');
-    console.log(JSON.stringify(params, null, 2));
-
     const xml = await this.httpClient.get(params);
-
-    console.log('[CHECK RAW XML]:');
-    console.log(xml);
 
     const parsed = await parseStringPromise(xml, {
       explicitArray: false,
     });
 
-    console.log('[CHECK PARSED FULL]:');
-    console.log(JSON.stringify(parsed, null, 2));
-
-    const result =
-      parsed?.ApiResponse?.CommandResponse?.DomainCheckResult?.$;
-
-    console.log('[CHECK ATTRIBUTES]:', result);
+    const result: DomainCheckResult | undefined =
+      NamecheapXmlExtractor.getCheckDomainResult(parsed);
 
     if (!result) {
-      console.log('[CHECK ERROR]: missing DomainCheckResult');
-      return false;
+      return this.notAvailable(DOMAIN_REASONS.EMPTY_RESPONSE);
     }
 
-    const normalized = {
-      domain: result.Domain,
-      available: result.Available,
-      errorNo: result.ErrorNo,
-      description: result.Description,
-      isPremium: result.IsPremiumName,
-    };
-
-    console.log('[CHECK NORMALIZED]:', normalized);
-
-    const interpretation = this.interpret(result);
-
-    console.log('[CHECK INTERPRETATION]:', interpretation);
-
-    return result.Available === 'true';
+    return this.mapResult(result);
   }
 
-  private interpret(result: any) {
-    if (result.Available === 'true') {
+  private mapResult(result: DomainCheckResult): DomainAvailabilityResult {
+    const isAvailable = result.Available === 'true';
+
+    if (isAvailable) {
       return {
-        status: 'AVAILABLE',
+        available: true,
+        status: DOMAIN_STATUS.AVAILABLE,
         reason: null,
       };
     }
 
     return {
-      status: 'NOT_AVAILABLE',
-      reason:
-        result.Description ||
-        (result.ErrorNo === '0'
-          ? 'Likely already registered or restricted by registry'
-          : 'Namecheap returned explicit restriction'),
+      available: false,
+      status: DOMAIN_STATUS.NOT_AVAILABLE,
+      reason: this.resolveReason(result),
+    };
+  }
+
+  private resolveReason(result: DomainCheckResult): string {
+    if (result.Description) {
+      return result.Description;
+    }
+
+    if (result.ErrorNo === '0') {
+      return DOMAIN_REASONS.LIKELY_REGISTERED;
+    }
+
+    return DOMAIN_REASONS.EXPLICIT_RESTRICTION;
+  }
+
+  private notAvailable(reason: string): DomainAvailabilityResult {
+    return {
+      available: false,
+      status: DOMAIN_STATUS.NOT_AVAILABLE,
+      reason,
     };
   }
 
   private buildParams(domain: string) {
-    return {
-      ApiUser: this.account.apiUser,
-      ApiKey: this.account.apiKey,
-      UserName: this.account.username,
-      ClientIp: this.account.clientIp,
-      Command: 'namecheap.domains.check',
-      DomainList: domain,
-    };
+    return mergeParams(
+      NamecheapBaseParams.build(this.account),
+      {
+        Command: NamecheapCommands.DOMAIN_CHECK,
+        DomainList: domain,
+      }
+    );
   }
 }

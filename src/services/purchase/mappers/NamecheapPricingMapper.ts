@@ -1,59 +1,48 @@
+import { toArray, getAttr, isYearlyPrice } from '../../../utils/namecheap/xml.utils';
+
 export class NamecheapPricingMapper {
   static fromXml(parsed: any) {
-    const categories =
-      parsed?.ApiResponse
-        ?.CommandResponse
-        ?.UserGetPricingResult
-        ?.ProductType
-        ?.ProductCategory;
+    const categories = this.extractCategories(parsed);
 
     if (!categories) {
       return null;
     }
 
-    const categoryList = Array.isArray(categories)
-      ? categories
-      : [categories];
-
     const result: Record<string, any> = {};
 
-    for (const category of categoryList) {
-      const categoryName = category?.$?.Name;
+    for (const category of toArray(categories)) {
+      const categoryName = getAttr(category)?.Name;
 
-      const product = category?.Product;
+      const yearly = this.extractYearlyPrice(category);
+      if (!yearly) continue;
 
-      if (!product) {
-        continue;
-      }
-
-      const prices = product?.Price;
-
-      if (!prices) {
-        continue;
-      }
-
-      const priceList = Array.isArray(prices)
-        ? prices
-        : [prices];
-
-      const yearly = priceList.find(
-        (p: any) =>
-          p?.$?.Duration === '1' &&
-          p?.$?.DurationType === 'YEAR'
-      );
-
-      if (!yearly) {
-        continue;
-      }
+      const attrs = getAttr(yearly);
 
       result[categoryName] = {
-        price: yearly.$?.Price ?? null,
-        yourPrice: yearly.$?.YourPrice ?? null,
-        additionalCost: yearly.$?.AdditionalCost ?? null,
-        currency: yearly.$?.Currency ?? null,
+        price: attrs.Price ?? null,
+        yourPrice: attrs.YourPrice ?? null,
+        additionalCost: attrs.AdditionalCost ?? null,
+        currency: attrs.Currency ?? null,
       };
     }
 
     return result;
+  }
+
+  private static extractCategories(parsed: any) {
+    return parsed?.ApiResponse
+      ?.CommandResponse
+      ?.UserGetPricingResult
+      ?.ProductType
+      ?.ProductCategory;
+  }
+
+  private static extractYearlyPrice(category: any) {
+    const product = category?.Product;
+    if (!product) return null;
+
+    const prices = toArray(product?.Price);
+
+    return prices.find(isYearlyPrice) ?? null;
   }
 }
