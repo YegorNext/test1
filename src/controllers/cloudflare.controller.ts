@@ -1,38 +1,31 @@
-import { Request, Response } from "express";
-import { DomainProvisioningFactory } from "../services/factories/DomainProvisioning.factory";
+import { Request, Response, NextFunction } from 'express';
+import { DomainProvisioningFactory } from '../services/factories/DomainProvisioning.factory';
 
 export class CloudflareController {
   constructor(private readonly provisioningFactory: DomainProvisioningFactory) {}
 
-  provisionDomain = async (req: Request, res: Response) => {
+  provisionDomain = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { domain, ip, cloudflareAccountId, namecheapAccountId } = req.body;
 
     if (!domain || !ip || !cloudflareAccountId || !namecheapAccountId) {
-      return res.status(400).json({
-        message: "domain, ip, cloudflareAccountId, namecheapAccountId are required",
+      res.status(400).json({
+        success: false,
+        message: 'domain, ip, cloudflareAccountId and namecheapAccountId are required',
       });
+      return;
     }
-    
+
     try {
-      const service =
-        await this.provisioningFactory.createCloudflareProvisionService(
-          cloudflareAccountId,
-          namecheapAccountId
-        );
+      const service = await this.provisioningFactory.createCloudflareProvisionService(
+        cloudflareAccountId,
+        namecheapAccountId,
+      );
 
       const result = await service.provision(domain, ip);
 
-      return res.json({
-        success: true,
-        provider: "cloudflare",
-        result,
-      });
-    } catch (error: any) {
-      return res.status(500).json({
-        success: false,
-        message: error.message,
-        details: error.details,
-      });
+      res.json({ success: true, provider: 'cloudflare', result });
+    } catch (error) {
+      next(error);
     }
   };
 }

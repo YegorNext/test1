@@ -1,55 +1,53 @@
-import axios, { AxiosInstance } from "axios";
-import { CloudflareAccountEntity } from "@org/db-models";
-import { CloudflareApiError } from "./cloudFlareApiError";
+import axios, { AxiosInstance } from 'axios';
+import { CloudflareAccountEntity } from '@org/db-models';
+import { CloudflareApiError } from './cloudflareApiError';
+
+const CLOUDFLARE_API_BASE_URL = 'https://api.cloudflare.com/client/v4';
 
 export class CloudflareApiClient {
-  private client: AxiosInstance;
+  private readonly client: AxiosInstance;
 
   constructor(account: CloudflareAccountEntity) {
     this.client = axios.create({
-      baseURL: "https://api.cloudflare.com/client/v4", 
+      baseURL: CLOUDFLARE_API_BASE_URL,
       headers: {
         Authorization: `Bearer ${account.apiToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
   }
 
-  async get<T>(url: string, params?: any): Promise<T> {
+  async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
     try {
-      const res = await this.client.get(url, { params });
+      const res = await this.client.get<T>(url, { params });
       return res.data;
     } catch (error: any) {
-      this.handleError(error);
+      throw this.wrapError(error);
     }
   }
 
-  async post<T>(url: string, body: any): Promise<T> {
+  async post<T>(url: string, body: unknown): Promise<T> {
     try {
-      const res = await this.client.post(url, body);
+      const res = await this.client.post<T>(url, body);
       return res.data;
     } catch (error: any) {
-      this.handleError(error);
+      throw this.wrapError(error);
     }
   }
 
-  async patch<T>(url: string, body: any): Promise<T> {
+  async patch<T>(url: string, body: unknown): Promise<T> {
     try {
-      const res = await this.client.patch(url, body);
+      const res = await this.client.patch<T>(url, body);
       return res.data;
     } catch (error: any) {
-      this.handleError(error);
+      throw this.wrapError(error);
     }
   }
 
-  private handleError(error: any): never {
+  private wrapError(error: any): CloudflareApiError {
     const status = error?.response?.status;
     const data = error?.response?.data;
-
-    throw new CloudflareApiError(
-      data?.errors?.[0]?.message || error.message,
-      status,
-      data
-    );
+    const message = data?.errors?.[0]?.message ?? error.message;
+    return new CloudflareApiError(message, status, data);
   }
 }

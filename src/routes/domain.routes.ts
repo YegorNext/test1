@@ -1,36 +1,20 @@
-// domain.router.ts
 import { Router } from 'express';
 import { DomainController } from '../controllers/domain.controller';
-import { errorHandler } from '../utils/handlers/error.handler';
+import { NamecheapAccountService } from '../services/NamecheapAccountService';
+import { NamecheapServiceFactory } from '../services/factories/NamecheapServiceFactory';
 
 const router = Router();
-const controller = new DomainController();
 
-router.post('/namecheap/add-a', async (req, res, next) => {
-  try {
-    await controller.addARecordOnNamecheap(req, res);
-  } catch (err) {
-    next(err);
-  }
-});
+const factory = new NamecheapServiceFactory(
+  new NamecheapAccountService(),
+  process.env.NAMECHEAP_API_URL!,
+  process.env.NAMECHEAP_CLIENT_IP!,
+);
 
-router.post('/namecheap/purchase', async (req, res, next) => {
-  try {
-    await controller.purchaseDomain(req, res);
-  } catch (err) {
-    next(err);
-  }
-});
+const controller = new DomainController(factory);
 
-router.post('/namecheap/pricing', async (req, res, next) => {
-  try {
-    await controller.getDomainPricing(req, res);
-  } catch (err) {
-    next(err);
-  }
-});
-
-
-router.use(errorHandler);
+router.post('/namecheap/add-a', controller.addARecordOnNamecheap);
+router.post('/namecheap/purchase', controller.purchaseDomain);
+router.post('/namecheap/pricing', controller.getDomainPricing);
 
 export default router;

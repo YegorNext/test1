@@ -1,25 +1,19 @@
 import axios, { AxiosInstance } from 'axios';
 
+const REQUEST_TIMEOUT_MS = 10_000;
+
 export class NamecheapHttpClient {
   private readonly client: AxiosInstance;
 
-  constructor(private readonly baseUrl: string) {
-    console.log('[HTTP CLIENT INIT]', baseUrl);
-
+  constructor(baseUrl: string) {
     this.client = axios.create({
       baseURL: baseUrl,
-      timeout: 10000,
+      timeout: REQUEST_TIMEOUT_MS,
     });
   }
 
-  public async get(params: Record<string, string>): Promise<string> {
-    console.log('[HTTP REQUEST PARAMS]');
-    console.log(JSON.stringify(params, null, 2));
-
+  async get(params: Record<string, string>): Promise<string> {
     const response = await this.client.get('', { params });
-
-    console.log('[HTTP STATUS]:', response.status);
-
     return response.data;
   }
 }

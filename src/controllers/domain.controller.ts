@@ -1,109 +1,64 @@
-import { Request, Response } from 'express';
-
-import { NamecheapAccountService } from '../services/NamecheapAccountService';
+import { Request, Response, NextFunction } from 'express';
 import { NamecheapServiceFactory } from '../services/factories/NamecheapServiceFactory';
 
 export class DomainController {
-  private factory: NamecheapServiceFactory;
+  constructor(private readonly factory: NamecheapServiceFactory) {}
 
-  constructor() {
-    const accountService = new NamecheapAccountService();
-
-    this.factory = new NamecheapServiceFactory(
-      accountService,
-      process.env.NAMECHEAP_API_URL!,  
-      process.env.NAMECHEAP_CLIENT_IP! 
-    );
-  }
-
-
-  addARecordOnNamecheap = async (req: Request, res: Response) => {
+  addARecordOnNamecheap = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { domain, ip, host, accountId } = req.body;
 
     if (!domain || !ip || !accountId) {
-      return res.status(400).json({
-        message: 'Domain, IP and accountId are required.',
-      });
+      res.status(400).json({ success: false, message: 'domain, ip and accountId are required' });
+      return;
     }
 
     try {
       const dnsService = await this.factory.createDNSService(accountId);
+      const aRecordResult = await dnsService.setARecord(domain, ip, host ?? '@');
 
-      const aRecordResult = await dnsService.setARecord(
-        domain,
-        ip,
-        host || '@'
-      );
-
-      return res.json({
-        domain,
-        namecheapARecord: aRecordResult,
-      });
-    } catch (error: any) {
-      return res.status(500).json({
-        domain,
-        message: error.message,
-      });
+      res.json({ domain, namecheapARecord: aRecordResult });
+    } catch (error) {
+      next(error);
     }
   };
 
-
-  purchaseDomain = async (req: Request, res: Response) => {
+  purchaseDomain = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { domain, accountId } = req.body;
 
-    console.log("TEST");
-
     if (!domain || !accountId) {
-      return res.status(400).json({
-        message: 'Domain and accountId are required.',
-      });
+      res.status(400).json({ success: false, message: 'domain and accountId are required' });
+      return;
     }
 
     try {
       const registrar = await this.factory.createRegistrar(accountId);
+      const registered = await registrar.registerDomain(domain);
 
-      const success = await registrar.registerDomain(domain);
-
-      return res.json({
+      res.json({
         domain,
-        registered: success,
-        message: success
-          ? 'Domain successfully registered'
-          : 'Domain registration failed',
+        registered,
+        message: registered ? 'Domain successfully registered' : 'Domain registration failed',
       });
-    } catch (error: any) {
-      return res.status(500).json({
-        domain,
-        registered: false,
-        message: error.message,
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
-  getDomainPricing = async (req: Request, res: Response) => {
+  getDomainPricing = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { domain, accountId } = req.body;
 
     if (!domain || !accountId) {
-      return res.status(400).json({
-        message: 'Domain and accountId are required.',
-      });
+      res.status(400).json({ success: false, message: 'domain and accountId are required' });
+      return;
     }
 
     try {
       const pricingService = await this.factory.createPricingService(accountId);
-
       const result = await pricingService.getPricing(domain);
 
-      return res.json({
-        domain: result.domain,
-        price: result.pricing,
-        errors: result.errors,
-      });
-    } catch (error: any) {
-      return res.status(500).json({
-        domain,
-        message: error.message,
-      });
+      res.json({ domain: result.domain, price: result.pricing, errors: result.errors });
+    } catch (error) {
+      next(error);
     }
   };
 }

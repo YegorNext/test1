@@ -1,41 +1,32 @@
-import { CloudflareZoneService } from "./cloudFlare/cloudflareZoneService";
-import { CloudflareDNSService } from "./cloudFlare/cloudflareDNSService";
-import { CloudflareSSLService } from "./cloudFlare/cloudflareSSLService";
-import { NamecheapDNSService } from "./NamecheapDNSService";
+import { CloudflareZoneService } from './cloudflare/cloudflareZoneService';
+import { CloudflareDNSService } from './cloudflare/cloudflareDNSService';
+import { CloudflareSSLService } from './cloudflare/cloudflareSSLService';
+import { NamecheapDNSService } from './NamecheapDNSService';
 
 export class DomainProvisionService {
-  constructor(private zoneService: CloudflareZoneService, private dnsService: CloudflareDNSService, private sslService: CloudflareSSLService, private namecheapDNS: NamecheapDNSService) {}
+  constructor(
+    private readonly zoneService: CloudflareZoneService,
+    private readonly dnsService: CloudflareDNSService,
+    private readonly sslService: CloudflareSSLService,
+    private readonly namecheapDNS: NamecheapDNSService,
+  ) {}
 
   async provision(domain: string, ip: string) {
-    console.log("START");
-
     const zone = await this.zoneService.addDomain(domain);
-    console.log("ZONE CREATED", zone);
 
-    await this.namecheapDNS.setCustomNameservers(domain, zone.nameservers)
-      .catch(err => {
-        console.error("NS SWITCH FAILED:", err.message);
-        throw err;
-    });
-    console.log("NAMECHEAP NS SET", domain);
+    // Point Namecheap domain to Cloudflare nameservers
+    await this.namecheapDNS.setCustomNameservers(domain, zone.nameservers);
 
-    const root = await this.dnsService.createARecord(zone.zoneId, "@", ip);
-    console.log("ROOT RECORD CREATED", root);
-
-    const www = await this.dnsService.createCNAMERecord(zone.zoneId, "www", domain);
-    console.log("WWW RECORD CREATED", www);
+    const root = await this.dnsService.createARecord(zone.zoneId, '@', ip);
+    const www = await this.dnsService.createCNAMERecord(zone.zoneId, 'www', domain);
 
     await this.sslService.enableHttps(zone.zoneId);
-    console.log("HTTPS ENABLED", zone.zoneId);
 
     return {
       domain,
       zoneId: zone.zoneId,
       nameservers: zone.nameservers,
-      dns: {
-        root,
-        www,
-      },
+      dns: { root, www },
       https: true,
     };
   }

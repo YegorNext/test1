@@ -1,21 +1,23 @@
+import { NamecheapAccount } from '../../../types/NamecheapAccount';
+import { NamecheapCommands } from '../../../utils/namecheap/constants/commands';
+
 export class NamecheapPricingRequestBuilder {
-  static build(
-    apiUser: string,
-    apiKey: string,
-    userName: string,
-    clientIp: string,
-    domain: string
-  ): Record<string, string> {
+
+  static build(account: NamecheapAccount, domain: string): Record<string, string> {
     const tld = domain.split('.').pop();
 
+    if (!tld) {
+      throw new Error(`Cannot extract TLD from domain: ${domain}`);
+    }
+
     return {
-      ApiUser: apiUser,
-      ApiKey: apiKey,
-      UserName: userName,
-      ClientIp: clientIp,
-      Command: 'namecheap.users.getPricing',
+      ApiUser: account.apiUser,
+      ApiKey: account.apiKey,
+      UserName: account.username,
+      ClientIp: account.clientIp,
+      Command: NamecheapCommands.PRICE_GET,
       ProductType: 'DOMAIN',
-      ProductName: tld!,
+      ProductName: tld,
     };
   }
 }

@@ -1,12 +1,14 @@
 import { DomainUtils } from './DomainUtils';
+import { NamecheapCommands } from '../../../utils/namecheap/constants/commands';
+import { NamecheapAccount } from '../../../types/NamecheapAccount';
 
 export class NamecheapRequestBuilder {
   static buildARecord(
-    account: any, 
+    account: Pick<NamecheapAccount, 'apiUser' | 'apiKey' | 'username' | 'clientIp'>,
     domain: string,
     ip: string,
-    hostName: string = '@',
-    ttl: number = 1800
+    hostName = '@',
+    ttl = 1800,
   ): Record<string, string> {
     const { sld, tld } = DomainUtils.split(domain);
 
@@ -15,12 +17,9 @@ export class NamecheapRequestBuilder {
       ApiKey: account.apiKey,
       UserName: account.username,
       ClientIp: account.clientIp,
-
-      Command: 'namecheap.domains.dns.setHosts',
-
+      Command: NamecheapCommands.DNS_SET_HOSTS,
       SLD: sld,
       TLD: tld,
-
       HostName1: hostName,
       RecordType1: 'A',
       Address1: ip,
@@ -29,10 +28,10 @@ export class NamecheapRequestBuilder {
   }
 
   static buildSetCustomNameservers(
-    account: any, 
+    account: Pick<NamecheapAccount, 'apiUser' | 'apiKey' | 'username' | 'clientIp'>,
     domain: string,
-    nameservers: string[]
-  ) {
+    nameservers: string[],
+  ): Record<string, string> {
     const { sld, tld } = DomainUtils.split(domain);
 
     return {
@@ -40,12 +39,9 @@ export class NamecheapRequestBuilder {
       ApiKey: account.apiKey,
       UserName: account.username,
       ClientIp: account.clientIp,
-
-      Command: 'namecheap.domains.dns.setCustom',
-
+      Command: NamecheapCommands.DNS_SET_CUSTOM,
       SLD: sld,
       TLD: tld,
-
       NameServers: nameservers.join(','),
     };
   }
