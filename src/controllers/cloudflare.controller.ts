@@ -12,6 +12,10 @@ export class CloudflareController {
         message: "domain, ip, cloudflareAccountId, namecheapAccountId are required",
       });
     }
+    
+    console.log(`Provisioning domain ${domain} with IP ${ip} using Cloudflare account ${cloudflareAccountId} and Namecheap account ${namecheapAccountId}`); 
+
+    return;
 
     try {
       const service =
