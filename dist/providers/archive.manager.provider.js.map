@@ -1,1 +1,0 @@
-{"version":3,"file":"archive.manager.provider.js","sourceRoot":"","sources":["../../src/providers/archive.manager.provider.ts"],"names":[],"mappings":";;;AACA,wFAA6F;AAE7F,4DAAgE;AAEhE,MAAa,sBAAsB;IAC1B,MAAM,CAAC,iBAAiB,CAAC,IAAY;QAC1C,IAAI,IAAI,KAAK,4BAAgB;YAAE,OAAO,IAAI,+CAA0B,EAAE,CAAC;QACvE,OAAO,IAAI,CAAC;IACd,CAAC;CACF;AALD,wDAKC"}

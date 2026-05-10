@@ -1,1 +1,0 @@
-{"version":3,"file":"forbidden-word.entity.d.ts","sourceRoot":"","sources":["../../src/entities/forbidden-word.entity.ts"],"names":[],"mappings":"AAAA,qBAAa,mBAAmB;IAC9B,EAAE,EAAG,MAAM,CAAC;IACZ,IAAI,EAAG,MAAM,CAAC;IACd,QAAQ,EAAG,OAAO,CAAC;IACnB,SAAS,EAAG,IAAI,CAAC;gBAEL,OAAO,EAAE,OAAO,CAAC,mBAAmB,CAAC;CAGlD"}
