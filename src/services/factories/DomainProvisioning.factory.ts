@@ -3,10 +3,10 @@ import { CloudflareAccountService } from "../CloudflareAccountService";
 
 import { NamecheapServiceFactory } from "./NamecheapServiceFactory";
 
-import { CloudflareApiClient } from "../cloudFlare/cloudflareApiClient";
-import { CloudflareZoneService } from "../cloudFlare/cloudflareZoneService";
-import { CloudflareDNSService } from "../cloudFlare/cloudflareDNSService";
-import { CloudflareSSLService } from "../cloudFlare/cloudflareSSLService";
+import { CloudflareApiClient } from "../cloudflare/cloudflareApiClient";
+import { CloudflareZoneService } from "../cloudflare/cloudflareZoneService";
+import { CloudflareDNSService } from "../cloudflare/cloudflareDNSService";
+import { CloudflareSSLService } from "../cloudflare/cloudflareSSLService";
 
 import { DomainProvisionService } from "../DomainProvisioningService";
 

@@ -15,7 +15,10 @@ export class NameCheapDomainPricingService {
   public async getPricing(domain: string) {
     try {
       const params = NamecheapPricingRequestBuilder.build(
-        this.account,
+        this.account.apiUser,
+        this.account.apiKey,
+        this.account.username,
+        this.account.clientIp,
         domain
       );
 

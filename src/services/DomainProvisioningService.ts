@@ -1,6 +1,6 @@
-import { CloudflareZoneService } from "./cloudFlare/cloudflareZoneService";
-import { CloudflareDNSService } from "./cloudFlare/cloudflareDNSService";
-import { CloudflareSSLService } from "./cloudFlare/cloudflareSSLService";
+import { CloudflareZoneService } from "./cloudflare/cloudflareZoneService";
+import { CloudflareDNSService } from "./cloudflare/cloudflareDNSService";
+import { CloudflareSSLService } from "./cloudflare/cloudflareSSLService";
 import { NamecheapDNSService } from "./NamecheapDNSService";
 
 export class DomainProvisionService {
