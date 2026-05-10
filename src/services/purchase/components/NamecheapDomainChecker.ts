@@ -35,13 +35,20 @@ export class NamecheapDomainChecker {
       NamecheapXmlExtractor.getCheckDomainResult(parsed);
 
     if (!result) {
-      return this.notAvailable(DOMAIN_REASONS.EMPTY_RESPONSE);
+      return this.notAvailable(DOMAIN_REASONS.EMPTY_RESPONSE, xml);
     }
 
-    return this.mapResult(result);
+    const mapped = this.mapResult(result);
+
+    return {
+      ...mapped,
+      rawXml: xml,
+    };
   }
 
-  private mapResult(result: DomainCheckResult): DomainAvailabilityResult {
+  private mapResult(
+    result: DomainCheckResult
+  ): Omit<DomainAvailabilityResult, 'rawXml'> {
     const isAvailable = result.Available === 'true';
 
     if (isAvailable) {
@@ -71,11 +78,12 @@ export class NamecheapDomainChecker {
     return DOMAIN_REASONS.EXPLICIT_RESTRICTION;
   }
 
-  private notAvailable(reason: string): DomainAvailabilityResult {
+  private notAvailable(reason: string, xml: string): DomainAvailabilityResult {
     return {
       available: false,
       status: DOMAIN_STATUS.NOT_AVAILABLE,
       reason,
+      rawXml: xml,
     };
   }
 

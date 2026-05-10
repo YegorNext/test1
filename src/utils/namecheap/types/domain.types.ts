@@ -15,4 +15,5 @@ export interface DomainAvailabilityResult {
   available: boolean;
   status: string;
   reason: string | null;
+  rawXml: string;
 }

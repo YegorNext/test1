@@ -8,28 +8,42 @@ import { NamecheapBaseParams } from '../../utils/namecheap/namecheap-base-params
 import { mergeParams } from '../../utils/namecheap/merge-params';
 import { NamecheapContactsParamsBuilder } from '../../utils/namecheap/namecheap-contacts-paramds.builder';
 
+import { DomainAvailabilityResult } from '../../utils/namecheap/types/domain.types';
+
 export class NamecheapDomainRegistrar implements IDomainRegistrar {
   private checker: NamecheapDomainChecker;
   private parser: DomainResponseParser;
 
-  constructor( private readonly account: any, private readonly httpClient: NamecheapHttpClient) {
+  constructor(
+    private readonly account: any,
+    private readonly httpClient: NamecheapHttpClient
+  ) {
     this.checker = new NamecheapDomainChecker(account, httpClient);
     this.parser = new DomainResponseParser();
   }
 
-  public async checkAvailability(domain: string): Promise<boolean> {
-    const result = await this.checker.checkAvailability(domain);
-    return result.available;
+  public async checkAvailability(domain: string): Promise<DomainAvailabilityResult> {
+    return this.checker.checkAvailability(domain);
   }
 
-  public async registerDomain(domain: string): Promise<boolean> {
-    await this.ensureAvailable(domain);
+  public async registerDomain(domain: string): Promise<{success: boolean; rawXml: string; reason?: string | null;}> {
+    const availability = await this.checker.checkAvailability(domain);
+
+    if (!availability.available) {
+      throw new Error(
+        `Domain ${domain} is not available: ${availability.reason}`
+      );
+    }
 
     const params = this.buildParams(domain);
 
     const xml = await this.httpClient.get(params);
 
-    return this.parser.parseRegistered(xml);
+    return {
+      success: await this.parser.parseRegistered(xml),
+      rawXml: xml,
+      reason: availability.reason,
+    };
   }
 
   private buildParams(domain: string) {
@@ -50,13 +64,5 @@ export class NamecheapDomainRegistrar implements IDomainRegistrar {
       baseParams,
       NamecheapContactsParamsBuilder.build(contacts)
     );
-  }
-
-  private async ensureAvailable(domain: string): Promise<void> {
-    const result = await this.checker.checkAvailability(domain);
-
-    if (!result.available) {
-      throw new Error(`Domain ${domain} is not available for registration`);
-    }
   }
 }
